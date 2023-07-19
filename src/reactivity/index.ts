@@ -1,7 +1,3 @@
-let activeEffect;
-
-class Dep {
-  constructor() {}
-  get value() {}
-  set value(value) {}
+export function add(sum) {
+  return sum + 2;
 }
