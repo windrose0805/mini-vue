@@ -1,5 +1,6 @@
 class ReactiveEffect {
-  constructor(fn) {
+  private _fn: Function;
+  constructor(fn: Function) {
     this._fn = fn;
   }
   run() {
