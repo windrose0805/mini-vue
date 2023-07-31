@@ -7,8 +7,11 @@ class ReactiveEffect {
     this.scheduler = scheduler;
   }
   run() {
+    shouldTrack = true;
     activeEffect = this;
-    return this._fn();
+    const result = this._fn()
+    shouldTrack = false;
+    return result;
   }
   stop() {
     this.deps.forEach((dep: any) => {
@@ -20,6 +23,7 @@ class ReactiveEffect {
 const targetMap = new Map();
 
 export function track(target, key) {
+  if (activeEffect === undefined || !shouldTrack) return;
   //target -> key -> dep
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -33,6 +37,7 @@ export function track(target, key) {
   }
 
   dep.add(activeEffect);
+
   activeEffect.deps.push(dep);
 }
 
@@ -49,6 +54,7 @@ export function trigger(target, key) {
 }
 
 let activeEffect;
+let shouldTrack;
 
 export function effect(fn, options: any = {}) {
   const scheduler = options.scheduler;
