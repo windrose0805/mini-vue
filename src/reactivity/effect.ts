@@ -9,7 +9,7 @@ class ReactiveEffect {
   run() {
     shouldTrack = true;
     activeEffect = this;
-    const result = this._fn()
+    const result = this._fn();
     shouldTrack = false;
     return result;
   }
