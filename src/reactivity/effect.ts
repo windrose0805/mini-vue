@@ -1,6 +1,6 @@
 import { extend } from "../shared";
 
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn: Function;
   //deps是数组的原因：effect里面可能订阅了不同的响应式变量
   deps = [];
@@ -59,8 +59,11 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
-  dep.add(activeEffect);
+  trackEffects(dep);
+}
 
+export function trackEffects(dep) {
+  dep.add(activeEffect);
   //反向收集dep
   activeEffect.deps.push(dep);
 }
@@ -68,6 +71,11 @@ export function track(target, key) {
 export function trigger(target, key) {
   let depsMap = targetMap.get(target);
   let dep = depsMap.get(key);
+
+  triggerEffects(dep);
+}
+
+export function triggerEffects(dep) {
   for (const effect of dep) {
     if (effect.scheduler) {
       effect.scheduler();
