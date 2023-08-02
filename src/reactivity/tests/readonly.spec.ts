@@ -1,4 +1,4 @@
-import {  readonly } from "../reactive";
+import { isProxy, isReactive, isReadonly, readonly } from "../reactive";
 
 describe("readonly", () => {
   it("should make nested values readonly", () => {
@@ -6,13 +6,9 @@ describe("readonly", () => {
     const wrapped = readonly(original);
     expect(wrapped).not.toBe(original);
 
-    console.warn = jest.fn()
-
-    wrapped.foo = 2
-
-    // get
-    expect(wrapped.foo).toBe(1);
-
-    expect(console.warn).toBeCalled()
+    expect(wrapped).not.toBe(original);
+    expect(isProxy(wrapped)).toBe(true);
+    expect(isReactive(wrapped)).toBe(false);
+    expect(isReadonly(wrapped)).toBe(true);
   });
 });

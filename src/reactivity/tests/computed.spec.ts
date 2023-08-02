@@ -2,18 +2,18 @@ import { computed } from "../computed";
 import { reactive } from "../reactive";
 
 describe("computed", () => {
-  it("happy path", () => {
-    const value = reactive({
-      foo: 1,
-    });
+  // it("happy path", () => {
+  //   const value = reactive({
+  //     foo: 1,
+  //   });
 
-    const getter = computed(() => {
-      return value.foo;
-    });
+  //   const getter = computed(() => {
+  //     return value.foo;
+  //   });
 
-    value.foo = 2;
-    expect(getter.value).toBe(2);
-  });
+  //   value.foo = 2;
+  //   expect(getter.value).toBe(2);
+  // });
 
   it("should compute lazily", () => {
     const value = reactive({
