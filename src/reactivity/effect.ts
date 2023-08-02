@@ -1,4 +1,9 @@
 import { extend } from "../shared";
+import { createDep } from "./dep";
+
+let activeEffect;
+let shouldTrack;
+const targetMap = new WeakMap();
 
 export class ReactiveEffect {
   private _fn: Function;
@@ -43,7 +48,7 @@ function cleanEffects(effect) {
   });
 }
 
-const targetMap = new Map();
+
 
 export function track(target, key) {
   if (activeEffect === undefined || !shouldTrack) return;
@@ -55,7 +60,7 @@ export function track(target, key) {
   }
   let dep = depsMap.get(key);
   if (!dep) {
-    dep = new Set();
+    dep = createDep();
     depsMap.set(key, dep);
   }
 
@@ -84,9 +89,6 @@ export function triggerEffects(dep) {
     }
   }
 }
-
-let activeEffect;
-let shouldTrack;
 
 export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler);

@@ -1,12 +1,14 @@
 import { hasChanged, isObject } from "../shared";
 import { trackEffects, triggerEffects } from "./effect";
 import { reactive } from "./reactive";
+import { createDep } from "./dep";
 
 export class RefImpl {
   private _value;
   private _rawValue;
-  private _dep = new Set();
+  private _dep;
   constructor(value) {
+    this._dep = createDep();
     this._rawValue = value;
     this._value = convert(value);
   }
