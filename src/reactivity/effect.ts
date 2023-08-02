@@ -61,6 +61,7 @@ export function track(target, key) {
 
   dep.add(activeEffect);
 
+  //反向收集dep
   activeEffect.deps.push(dep);
 }
 
