@@ -2,8 +2,9 @@ import { extend } from "../shared";
 
 class ReactiveEffect {
   private _fn: Function;
-  //dep与effect是多对多的关系，即一个dep可以有多个effect，一个effect也可以有多个不同的dep
+  //deps是数组的原因：effect里面可能订阅了不同的响应式变量
   deps = [];
+  //调度器
   public scheduler: any;
   onStop?: () => void;
   active = true;
@@ -12,13 +13,19 @@ class ReactiveEffect {
     this.scheduler = scheduler;
   }
   run() {
+    //控制依赖能不能被收集的开关
     shouldTrack = true;
+
     activeEffect = this;
+
+    //当run被执行时，就触发收集依赖
     const result = this._fn();
+
     shouldTrack = false;
     return result;
   }
   stop() {
+    //防止stop被重复调用
     if (this.active) {
       cleanEffects(this);
       if (this.onStop) {
@@ -30,6 +37,7 @@ class ReactiveEffect {
 }
 
 function cleanEffects(effect) {
+  //将effect里所有响应式变量的dep删除该effect
   effect.deps.forEach((dep: any) => {
     dep.delete(effect);
   });

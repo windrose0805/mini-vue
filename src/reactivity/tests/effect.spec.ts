@@ -66,6 +66,7 @@ describe("effect", () => {
       dummy = obj.prop;
     });
 
+    //两个响应式变量，含有各自的dep
     const runner1 = effect(() => {
       dummy = obj.prop + obj1.count;
     });

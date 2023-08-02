@@ -3,7 +3,7 @@ import { track, trigger } from "./effect";
 function createGetter(isReadonly = false) {
   return function (target, key) {
     const res = Reflect.get(target, key);
-    // TODO 收集依赖
+    //收集依赖
     if (!isReadonly) track(target, key);
     return res;
   };
@@ -16,7 +16,7 @@ function creatSetter(isReadonly = false) {
       return true;
     }
     const res = Reflect.set(target, key, value);
-    // TODO  触发依赖
+    //触发依赖
     trigger(target, key);
     return res;
   };
