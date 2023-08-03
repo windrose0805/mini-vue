@@ -48,10 +48,8 @@ function cleanEffects(effect) {
   });
 }
 
-
-
 export function track(target, key) {
-  if (activeEffect === undefined || !shouldTrack) return;
+  if (!isTracking()) return;
   //target -> key -> dep
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -67,7 +65,12 @@ export function track(target, key) {
   trackEffects(dep);
 }
 
+export function isTracking() {
+  return activeEffect !== undefined && shouldTrack;
+}
+
 export function trackEffects(dep) {
+  if (dep.has(activeEffect)) return;
   dep.add(activeEffect);
   //反向收集dep
   activeEffect.deps.push(dep);

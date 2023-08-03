@@ -13,7 +13,6 @@ export class RefImpl {
     this._value = convert(value);
   }
   get value() {
-    this._rawValue = this._value;
     trackEffects(this._dep);
     return this._value;
   }
