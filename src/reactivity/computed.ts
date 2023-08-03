@@ -1,6 +1,7 @@
 import { ReactiveEffect } from "./effect";
 
 //computed实际是一个只读的响应式变量
+//机制：懒执行+可缓存
 export class ComputedRefImpl {
   _getter: any;
   //是否执行的标志
