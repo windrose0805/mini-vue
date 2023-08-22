@@ -15,6 +15,22 @@ export function setupCompoent(instance) {
 
 function setupStatefulComponent(instance: any) {
   const Component = instance.vnode.type;
+
+  instance.proxy = new Proxy(
+    {},
+    {
+      get(target, key) {
+        const { setupState } = instance;
+        if (key in setupState) {
+          return setupState[key];
+        }
+        if (key === "$el") {
+          return instance.vnode.el;
+        }
+      },
+    }
+  );
+
   const { setup } = Component;
   if (setup) {
     const setupResult = setup();
@@ -25,7 +41,7 @@ function setupStatefulComponent(instance: any) {
 function handleSetupResult(instance, setupResult: any) {
   // todo function
   if (typeof setupResult === "object") {
-    instance.setupResult = setupResult;
+    instance.setupState = setupResult;
   }
   finishComponentSetup(instance);
 }

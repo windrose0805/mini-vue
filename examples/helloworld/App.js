@@ -1,9 +1,13 @@
 import { h } from '../../lib/guide-mini-vue.esm.js'
+
+
+window.self = null
 export const App = {
     render() {
-        // return h('div', { id: 'root', class: 'red, blue' }, 'hi ' + this.msg)
+        window.self = this
+        return h('div', { id: 'root', class: 'red, blue' }, 'hi ' + this.msg)
 
-        return h('div', { id: 'root' }, [h('p', { class: 'red' }, 'hi'), h('p', { class: 'blue' }, 'mini-vue')])
+        // return h('div', { id: 'root' }, [h('p', { class: 'red' }, 'hi'), h('p', { class: 'blue' }, 'mini-vue')])
 
     },
     setup() {
