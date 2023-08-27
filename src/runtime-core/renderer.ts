@@ -1,4 +1,4 @@
-import { isObject } from "../shared/index";
+import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupCompoent } from "./component";
 
 export function render(vnode, container) {
@@ -7,9 +7,10 @@ export function render(vnode, container) {
 
 function patch(vnode, container) {
   // 处理组件
-  if (typeof vnode.type === "string") {
+  const { shapeFlag } = vnode;
+  if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(vnode, container);
-  } else if (isObject(vnode.type)) {
+  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container);
   }
 }
@@ -19,13 +20,17 @@ function processComponent(vnode, container) {
 }
 
 function processElement(vnode, container) {
+  mountElement(vnode, container);
+}
+
+function mountElement(vnode, container) {
   const el = (vnode.el = document.createElement(vnode.type));
 
-  const { children } = vnode;
+  const { children, shapeFlag } = vnode;
 
-  if (typeof children === "string") {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(children, el);
   }
 
@@ -33,7 +38,13 @@ function processElement(vnode, container) {
 
   for (const key in props) {
     const val = props[key];
-    el.setAttribute(key, val);
+    const isOn = (key: string) => /^on[A-Z]/.test(key);
+    if (isOn(key)) {
+      const event = key.slice(2).toLocaleLowerCase()
+      el.addEventListener(event, val);
+    } else {
+      el.setAttribute(key, val);
+    }
   }
 
   container.append(el);
