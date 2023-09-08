@@ -1,4 +1,4 @@
-import { h, renderSlots } from "../../lib/guide-mini-vue.esm.js";
+import { h, renderSlots, Fragment, Text } from "../../lib/guide-mini-vue.esm.js";
 
 export const Foo = {
   render() {
@@ -15,7 +15,7 @@ export const Foo = {
       },
 
       // 转为VNode处理
-      [renderSlots(this.$slots, "bar", this.props)]
+      // [renderSlots(this.$slots, "bar", this.props)]
 
       // 等价于这个
       // [
@@ -35,6 +35,8 @@ export const Foo = {
       //     el: null,
       //   },
       // ]
+
+      [h(Text, null, "文本节点")]
     );
   },
   setup(props) {

@@ -1,5 +1,6 @@
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupCompoent } from "./component";
+import { Fragment, Text } from "./vnode";
 
 export function render(vnode, container) {
   patch(vnode, container);
@@ -7,12 +8,32 @@ export function render(vnode, container) {
 
 function patch(vnode, container) {
   // 处理组件
-  const { shapeFlag } = vnode;
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container);
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container);
+  const { type, shapeFlag } = vnode;
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container);
+      break;
+    case Text: {
+      processText(vnode, container);
+      break;
+    }
+    default:
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container);
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container);
+      }
   }
+}
+
+// Fragment特殊节点处理
+function processFragment(vnode, container) {
+  mountChildren(vnode.children, container);
+}
+
+// Fragment特殊节点处理
+function processText(vnode, container) {
+  mountText(vnode, container);
 }
 
 function processComponent(vnode, container) {
@@ -40,7 +61,7 @@ function mountElement(vnode, container) {
     const val = props[key];
     const isOn = (key: string) => /^on[A-Z]/.test(key);
     if (isOn(key)) {
-      const event = key.slice(2).toLocaleLowerCase()
+      const event = key.slice(2).toLocaleLowerCase();
       el.addEventListener(event, val);
     } else {
       el.setAttribute(key, val);
@@ -61,6 +82,12 @@ function mountComponent(vnode, container) {
   setupCompoent(instance);
   setupRenderEffect(instance, vnode, container);
 }
+
+function mountText(vnode, container) {
+  const el = (vnode.el =document.createTextNode(vnode.children));
+  container.append(el);
+}
+
 function setupRenderEffect(instance: any, vnode, container) {
   const { proxy } = instance;
   const subTree = instance.render.call(proxy);
