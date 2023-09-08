@@ -1,4 +1,4 @@
-import { extend } from "../shared";
+import { extend } from "../shared/index";
 import { createDep } from "./dep";
 
 let activeEffect;
@@ -7,9 +7,9 @@ const targetMap = new WeakMap();
 
 export class ReactiveEffect {
   private _fn: Function;
-  //deps是数组的原因：effect里面可能订阅了不同的响应式变量
+  // deps是数组的原因：effect里面可能订阅了不同的响应式变量
   deps = [];
-  //调度器
+  // 调度器
   public scheduler: any;
   onStop?: () => void;
   active = true;
@@ -18,12 +18,12 @@ export class ReactiveEffect {
     this.scheduler = scheduler;
   }
   run() {
-    //控制依赖能不能被收集的开关
+    // 控制依赖能不能被收集的开关
     shouldTrack = true;
 
     activeEffect = this;
 
-    //当run被执行时，就触发收集依赖
+    // 当run被执行时，就触发收集依赖
     const result = this._fn();
 
     shouldTrack = false;
@@ -31,7 +31,7 @@ export class ReactiveEffect {
     return result;
   }
   stop() {
-    //防止stop被重复调用
+    // 防止stop被重复调用
     if (this.active) {
       cleanEffects(this);
       if (this.onStop) {
@@ -43,7 +43,7 @@ export class ReactiveEffect {
 }
 
 function cleanEffects(effect) {
-  //将effect里所有响应式变量的dep删除该effect
+  // 将effect里所有响应式变量的dep删除该effect
   effect.deps.forEach((dep: any) => {
     dep.delete(effect);
   });
@@ -51,7 +51,7 @@ function cleanEffects(effect) {
 
 export function track(target, key) {
   if (!isTracking()) return;
-  //target -> key -> dep
+  // target -> key -> dep
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     depsMap = new Map();
@@ -73,7 +73,7 @@ export function isTracking() {
 export function trackEffects(dep) {
   if (dep.has(activeEffect)) return;
   dep.add(activeEffect);
-  //反向收集dep
+  // 反向收集dep
   activeEffect.deps.push(dep);
 }
 

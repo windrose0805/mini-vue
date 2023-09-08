@@ -10,7 +10,7 @@ export const App = {
     //     id: 'root',
     //     class: 'red, blue',
     //     onClick: () => {
-    //         console.log('被点击')
+    //         ('被点击')
     //     }
     // }, [h('div', {}, this.msg), h(Foo, { count: this.count })])
 

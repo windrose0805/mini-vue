@@ -1,3 +1,4 @@
+import { effect } from "../index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupCompoent } from "./component";
 import { Fragment, Text } from "./vnode";
@@ -31,7 +32,7 @@ function processFragment(vnode, container) {
   mountChildren(vnode.children, container);
 }
 
-// Fragment特殊节点处理
+// text特殊节点处理
 function processText(vnode, container) {
   mountText(vnode, container);
 }
@@ -84,16 +85,17 @@ function mountComponent(vnode, container) {
 }
 
 function mountText(vnode, container) {
-  const el = (vnode.el =document.createTextNode(vnode.children));
+  const el = (vnode.el = document.createTextNode(vnode.children));
   container.append(el);
 }
 
 function setupRenderEffect(instance: any, vnode, container) {
   const { proxy } = instance;
-  const subTree = instance.render.call(proxy);
-  // vnode -> patch
-  // vnode -> element -> mountElement
-  patch(subTree, container);
-
-  vnode.el = subTree.el;
+  effect(() => {
+    const subTree = instance.render.call(proxy);
+    // vnode -> patch
+    // vnode -> element -> mountElement
+    patch(subTree, container);
+    vnode.el = subTree.el;
+  });
 }
