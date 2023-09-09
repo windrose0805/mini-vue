@@ -3,17 +3,25 @@ import { h, ref, Text } from "../../lib/guide-mini-vue.esm.js";
 export const App = {
   name: "App",
   render() {
-    return h("div", {}, [
-      h(Text, {}, this.count),
+
+    return h("div", { ...this.props }, [
+      h('span', {}, 'count: ' + this.count),
       h("button", { onClick: this.click }, "修改count的值"),
     ]);
   },
   setup() {
     const count = ref(0);
+    const props = ref({
+      foo: 'foo'
+    })
     return {
       count,
+      props,
       click: () => {
         count.value++;
+        // props.value.foo = 'new-foo'
+        // props.value.foo = null
+        props.value.app = 'app'
       },
     };
   },

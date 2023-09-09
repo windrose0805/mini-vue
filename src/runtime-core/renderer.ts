@@ -1,54 +1,91 @@
 import { effect } from "../index";
+import { isOn } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupCompoent } from "./component";
 import { Fragment, Text } from "./vnode";
+import { patchProp } from "../runtime-dom/index";
 
-export function render(vnode, container) {
-  patch(vnode, container);
+export function render(n1, n2, container) {
+  patch(n1, n2, container);
 }
 
-function patch(vnode, container) {
+// 新旧节点对比
+
+function patch(n1, n2, container) {
   // 处理组件
-  const { type, shapeFlag } = vnode;
+  const { type, shapeFlag } = n2;
   switch (type) {
     case Fragment:
-      processFragment(vnode, container);
+      processFragment(n1, n2, container);
       break;
     case Text: {
-      processText(vnode, container);
+      processText(n1, n2, container);
       break;
     }
     default:
       if (shapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container);
+        processElement(n1, n2, container);
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container);
+        processComponent(n1, n2, container);
       }
   }
 }
 
 // Fragment特殊节点处理
-function processFragment(vnode, container) {
-  mountChildren(vnode.children, container);
+function processFragment(n1, n2, container) {
+  mountChildren(n2.children, container);
 }
 
 // text特殊节点处理
-function processText(vnode, container) {
-  mountText(vnode, container);
+function processText(n1, n2, container) {
+  mountText(n2, container);
 }
 
-function processComponent(vnode, container) {
-  mountComponent(vnode, container);
+function processComponent(n1, n2, container) {
+  mountComponent(n2, container);
 }
 
-function processElement(vnode, container) {
-  mountElement(vnode, container);
+function processElement(n1, n2, container) {
+  if (!n1) {
+    mountElement(n2, container);
+  } else {
+    patchElement(n1, n2, container);
+  }
 }
 
-function mountElement(vnode, container) {
-  const el = (vnode.el = document.createElement(vnode.type));
+function patchElement(n1, n2, container) {
+  const oldProps = n1.props || EMPTY_ONJ;
+  const newProps = n2.props || EMPTY_ONJ;
+  const el = (n2.el = n1.el);
+  patchProps(el, oldProps, newProps);
+}
 
-  const { children, shapeFlag } = vnode;
+const EMPTY_ONJ = {};
+
+function patchProps(el, oldProps, newProps) {
+  if (oldProps === newProps) return;
+  for (const key in newProps) {
+    const prevProp = oldProps[key];
+    const nextProp = newProps[key];
+    if (prevProp !== nextProp) {
+      patchProp(el, key, prevProp, nextProp);
+    }
+  }
+
+  if (oldProps !== EMPTY_ONJ) {
+    for (const key in oldProps) {
+      const prevProp = oldProps[key];
+      if (!(key in newProps)) {
+        patchProp(el, key, prevProp, null);
+      }
+    }
+  }
+}
+
+function mountElement(n2, container) {
+  const el = (n2.el = document.createElement(n2.type));
+
+  const { children, shapeFlag } = n2;
 
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
@@ -56,11 +93,10 @@ function mountElement(vnode, container) {
     mountChildren(children, el);
   }
 
-  const { props } = vnode;
+  const { props } = n2;
 
   for (const key in props) {
     const val = props[key];
-    const isOn = (key: string) => /^on[A-Z]/.test(key);
     if (isOn(key)) {
       const event = key.slice(2).toLocaleLowerCase();
       el.addEventListener(event, val);
@@ -72,9 +108,9 @@ function mountElement(vnode, container) {
   container.append(el);
 }
 
-function mountChildren(children, container) {
-  children.forEach((v) => {
-    patch(v, container);
+function mountChildren(n2, container) {
+  n2.forEach((v) => {
+    patch(null, v, container);
   });
 }
 
@@ -92,10 +128,20 @@ function mountText(vnode, container) {
 function setupRenderEffect(instance: any, vnode, container) {
   const { proxy } = instance;
   effect(() => {
-    const subTree = instance.render.call(proxy);
-    // vnode -> patch
-    // vnode -> element -> mountElement
-    patch(subTree, container);
-    vnode.el = subTree.el;
+    if (!instance.isMounted) {
+      const subTree = (instance.subTree = instance.render.call(proxy));
+      // vnode -> patch
+      // vnode -> element -> mountElement
+      patch(null, subTree, container);
+      vnode.el = subTree.el;
+
+      instance.isMounted = true;
+    } else {
+      const subTree = instance.render.call(proxy);
+      const prevTree = instance.subTree;
+      vnode.el = subTree.el;
+      instance.subTree = subTree;
+      patch(prevTree, subTree, container);
+    }
   });
 }

@@ -9,7 +9,7 @@ export function createApp(rootComponent) {
       // 所有逻辑处理基于vnode
       const vnode = createVNode(rootComponent);
 
-      render(vnode, rootContainer);
+      render(null, vnode, rootContainer);
     },
   };
 }

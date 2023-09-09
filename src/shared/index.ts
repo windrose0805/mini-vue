@@ -1,5 +1,7 @@
 export const extend = Object.assign;
 
+export const isOn = (key) => /^on[A-Z]/.test(key);
+
 export const isObject = (val) => {
   return val !== null && typeof val === "object";
 };
