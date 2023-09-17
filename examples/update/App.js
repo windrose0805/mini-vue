@@ -1,4 +1,4 @@
-import { h, ref, Text } from "../../lib/guide-mini-vue.esm.js";
+import { h, ref, Text, getCurrentInstance } from "../../lib/guide-mini-vue.esm.js";
 
 export const App = {
   name: "App",
@@ -10,18 +10,19 @@ export const App = {
     ]);
   },
   setup() {
+    const instance = getCurrentInstance()
     const count = ref(0);
     const props = ref({
       foo: 'foo'
     })
     return {
-      count,
+      // count,
       props,
       click: () => {
         count.value++;
         // props.value.foo = 'new-foo'
         // props.value.foo = null
-        props.value.app = 'app'
+        props.value.foo = 'app'
       },
     };
   },

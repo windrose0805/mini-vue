@@ -57,10 +57,16 @@ function patchElement(n1, n2, container) {
   const oldProps = n1.props || EMPTY_ONJ;
   const newProps = n2.props || EMPTY_ONJ;
   const el = (n2.el = n1.el);
+  patchChildren(n1, n2)
   patchProps(el, oldProps, newProps);
 }
 
 const EMPTY_ONJ = {};
+
+
+function patchChildren(n1, n2, ) {
+
+}
 
 function patchProps(el, oldProps, newProps) {
   if (oldProps === newProps) return;
