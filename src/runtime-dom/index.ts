@@ -74,11 +74,16 @@ function remove(child) {
   }
 }
 
-const renderer:any = createRnderer({ createElement, patchProp, insert });
+const renderer: any = createRnderer({
+  createElement,
+  patchProp,
+  insert,
+  remove,
+  setElementText
+});
 
 export function createApp(...args) {
   return renderer.createApp(...args);
 }
-
 
 export * from "../runtime-core/index";
