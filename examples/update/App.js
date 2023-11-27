@@ -16,13 +16,13 @@ export const App = {
       foo: 'foo'
     })
     return {
-      // count,
+      count,
       props,
       click: () => {
         count.value++;
         // props.value.foo = 'new-foo'
         // props.value.foo = null
-        props.value.foo = 'app'
+        // props.value.foo = 'app'
       },
     };
   },

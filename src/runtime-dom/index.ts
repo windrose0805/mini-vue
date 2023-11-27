@@ -2,6 +2,7 @@
 // 这里先简单实现
 
 import { isOn } from "../shared/index";
+import { createRnderer } from "../runtime-core";
 
 // 后面也修改成和源码一样的实现
 function createElement(type) {
@@ -27,7 +28,7 @@ export function patchProp(el, key, preValue, nextValue) {
   // preValue 之前的值
   // 为了之后 update 做准备的值
   // nextValue 当前的值
-  console.log(`PatchProp 设置属性:${key} 值:${nextValue}`);
+  console.log(el, `PatchProp 设置属性:${key} 值:${nextValue}`);
   console.log(`key: ${key} 之前的值是:${preValue}`);
 
   if (isOn(key)) {
@@ -72,3 +73,12 @@ function remove(child) {
     parent.removeChild(child);
   }
 }
+
+const renderer:any = createRnderer({ createElement, patchProp, insert });
+
+export function createApp(...args) {
+  return renderer.createApp(...args);
+}
+
+
+export * from "../runtime-core/index";
