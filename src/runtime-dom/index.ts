@@ -63,7 +63,7 @@ export function patchProp(el, key, preValue, nextValue) {
 }
 
 function insert(child, parent, anchor = null) {
-  console.log("Insert");
+ // parent.append(child)
   parent.insertBefore(child, anchor);
 }
 
