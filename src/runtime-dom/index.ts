@@ -63,7 +63,9 @@ export function patchProp(el, key, preValue, nextValue) {
 }
 
 function insert(child, parent, anchor = null) {
- // parent.append(child)
+  // parent.append(child)
+
+  // 如果给定的子节点是对文档中现有节点的引用，insertBefore()会将其从当前位置移动到新位置。
   parent.insertBefore(child, anchor);
 }
 
@@ -79,7 +81,7 @@ const renderer: any = createRnderer({
   patchProp,
   insert,
   remove,
-  setElementText
+  setElementText,
 });
 
 export function createApp(...args) {

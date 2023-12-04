@@ -181,7 +181,91 @@ export function createRnderer(options) {
         i++;
       }
     } else {
-      // 乱序的部分
+      // 中间对比
+
+      let s1 = i;
+      let s2 = i;
+
+      // 记录处理过的节点
+      const tobePatched = e2 - s2 + 1;
+      let patched = 0;
+
+      // 记录新节点的下标
+      const keyToNewIndexMap = new Map();
+
+      // 记录新节点在老节点列表里的下标
+      // 0代表该节点未在老节点列表里出现过
+      const newIndexToOldIndexMap = new Array(tobePatched).fill(0);
+
+      // 记录移动的最大下标
+      let moved = false;
+      let maxNewIndexSoFar = 0;
+
+      for (let i = s2; i <= e2; i++) {
+        keyToNewIndexMap.set(c2[i].key, i);
+      }
+
+      // 新节点的下标
+      let newIndex;
+
+      for (let i = s1; i <= e1; i++) {
+        if (patched >= tobePatched) {
+          hostRemove(e1[i].el);
+          continue;
+        }
+        newIndex = keyToNewIndexMap.get(c1[i].key);
+
+        if (newIndex === undefined) {
+          for (let j = s2; j <= e2; j++) {
+            if (c2[j].key === c1[i].key) {
+              newIndex = j;
+              break;
+            }
+          }
+        }
+
+        if (newIndex !== undefined) {
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex;
+          } else {
+            moved = true;
+          }
+          newIndexToOldIndexMap[newIndex - s2] = i + 1;
+          patch(c1[i], c2[newIndex], container, parentComponent, parentAnchor);
+          patched++;
+        } else {
+          hostRemove(c1[i].el);
+        }
+      }
+
+      // 计算最长递增子序列的下标
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : [];
+
+      // 最长递增子序列的下标
+      console.log(newIndexToOldIndexMap, increasingNewIndexSequence);
+
+      let j = increasingNewIndexSequence.length - 1;
+
+      for (let i = tobePatched - 1; i >= 0; i--) {
+        // 移动位置
+        const nextIndex = s2 + i;
+        const nextChild = c2[nextIndex];
+        const anchor = nextIndex + 1 > l2 ? null : c2[nextIndex + 1].el;
+
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor);
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            // 创建节点
+
+            insert(nextChild.el, container, anchor);
+          } else {
+            j--;
+          }
+        }
+      }
     }
   }
 
@@ -265,4 +349,45 @@ export function createRnderer(options) {
   return {
     createApp: createAppAPI(render),
   };
+}
+
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice();
+  const result = [0];
+  let i, j, u, v, c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
 }

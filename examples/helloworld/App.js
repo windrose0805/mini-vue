@@ -14,17 +14,8 @@ export const App = {
     //     }
     // }, [h('div', {}, this.msg), h(Foo, { count: this.count })])
 
-    // return h('div', { id: 'root' }, [h('p', { class: 'red' }, 'hi'), h('p', { class: 'blue' }, 'mini-vue')])
+    return h('div', { id: 'root' }, [h('p', { class: 'red' }, 'hi'), h('p', { class: 'blue' }, 'mini-vue')])
 
-    return h(
-      Foo,
-      { count: this.count },
-      {
-        // default: () => "default slot",
-        foo: () => h("div", {}, "foo"),
-        bar: () => h("span", {}, "one"),
-      }
-    );
   },
   setup() {
     return {
