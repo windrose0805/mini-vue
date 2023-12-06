@@ -2,6 +2,7 @@ import { effect } from "../index";
 import { isOn } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupCompoent } from "./component";
+import { shouldUpdateComponent } from "./componentUtils";
 import { createAppAPI } from "./createApp";
 import { Fragment, Text } from "./vnode";
 
@@ -56,8 +57,41 @@ export function createRnderer(options) {
     mountText(n2, container);
   }
 
+  function mountText(vnode, container) {
+    const el = (vnode.el = document.createTextNode(vnode.children));
+    container.append(el);
+  }
+
   function processComponent(n1, n2, container, parentComponent, anchor) {
-    mountComponent(n2, container, parentComponent, anchor);
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor);
+    } else {
+      updateComponent(n1, n2);
+    }
+  }
+
+  function mountComponent(initialVNode, container, parentComponent, anchor) {
+    const instance = (initialVNode.component =
+      createComponentInstance(initialVNode));
+    setupCompoent(instance);
+    setupRenderEffect(
+      instance,
+      initialVNode,
+      container,
+      parentComponent,
+      anchor
+    );
+  }
+
+  function updateComponent(n1, n2) {
+    const instance = (n2.component = n1.component);
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2;
+      instance.update();
+    } else {
+      n2.el = n1.el;
+      instance.vnode = n2
+    }
   }
 
   function processElement(n1, n2, container, parentComponent, anchor) {
@@ -66,6 +100,32 @@ export function createRnderer(options) {
     } else {
       patchElement(n1, n2, container, parentComponent, anchor);
     }
+  }
+
+  function mountElement(n2, container, parentComponent, anchor) {
+    const el = (n2.el = createElement(n2.type));
+
+    const { children, shapeFlag } = n2;
+
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      el.textContent = children;
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      mountChildren(children, el, parentComponent, anchor);
+    }
+
+    const { props } = n2;
+
+    for (const key in props) {
+      const val = props[key];
+      if (isOn(key)) {
+        const event = key.slice(2).toLocaleLowerCase();
+        el.addEventListener(event, val);
+      } else {
+        el.setAttribute(key, val);
+      }
+    }
+
+    insert(el, container, anchor);
   }
 
   function patchElement(n1, n2, container, parentComponent, anchor) {
@@ -117,6 +177,19 @@ export function createRnderer(options) {
       } else {
         patchKeyedChildren(c1, c2, container, parentComponent, anchor);
       }
+    }
+  }
+
+  function mountChildren(children, container, parentComponent, anchor) {
+    children.forEach((v) => {
+      patch(null, v, container, parentComponent, anchor);
+    });
+  }
+
+  function unmountChildren(children) {
+    for (let i = 0; i < children.length; i++) {
+      const el = children[i].el;
+      hostRemove(el);
     }
   }
 
@@ -269,56 +342,6 @@ export function createRnderer(options) {
     }
   }
 
-  function unmountChildren(children) {
-    for (let i = 0; i < children.length; i++) {
-      const el = children[i].el;
-      hostRemove(el);
-    }
-  }
-
-  function mountElement(n2, container, parentComponent, anchor) {
-    const el = (n2.el = createElement(n2.type));
-
-    const { children, shapeFlag } = n2;
-
-    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
-      el.textContent = children;
-    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(children, el, parentComponent, anchor);
-    }
-
-    const { props } = n2;
-
-    for (const key in props) {
-      const val = props[key];
-      if (isOn(key)) {
-        const event = key.slice(2).toLocaleLowerCase();
-        el.addEventListener(event, val);
-      } else {
-        el.setAttribute(key, val);
-      }
-    }
-
-    insert(el, container, anchor);
-  }
-
-  function mountChildren(children, container, parentComponent, anchor) {
-    children.forEach((v) => {
-      patch(null, v, container, parentComponent, anchor);
-    });
-  }
-
-  function mountComponent(vnode, container, parentComponent, anchor) {
-    const instance = createComponentInstance(vnode);
-    setupCompoent(instance);
-    setupRenderEffect(instance, vnode, container, parentComponent, anchor);
-  }
-
-  function mountText(vnode, container) {
-    const el = (vnode.el = document.createTextNode(vnode.children));
-    container.append(el);
-  }
-
   function setupRenderEffect(
     instance: any,
     vnode,
@@ -327,7 +350,7 @@ export function createRnderer(options) {
     anchor
   ) {
     const { proxy } = instance;
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         const subTree = (instance.subTree = instance.render.call(proxy));
         // vnode -> patch
@@ -337,6 +360,13 @@ export function createRnderer(options) {
 
         instance.isMounted = true;
       } else {
+        // 更新
+        const { next, vnode } = instance;
+        if (next) {
+          next.el = vnode.el;
+          updateComponentPreRender(instance, next);
+        }
+
         const subTree = instance.render.call(proxy);
         const prevTree = instance.subTree;
         vnode.el = subTree.el;
@@ -349,6 +379,12 @@ export function createRnderer(options) {
   return {
     createApp: createAppAPI(render),
   };
+}
+
+function updateComponentPreRender(instance, nextVNode) {
+  instance.vnode = nextVNode;
+  instance.next = null;
+  instance.props = nextVNode.props;
 }
 
 function getSequence(arr: number[]): number[] {
