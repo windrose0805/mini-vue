@@ -8,6 +8,7 @@ import { initSlots } from "./componentSlots";
 export function createComponentInstance(vnode) {
   const component = {
     vnode,
+    component: null,
     type: vnode.type,
     setupState: {},
     props: {},
@@ -35,7 +36,9 @@ function setupStatefulComponent(instance: any) {
   if (setup) {
     setCurrentInstance(instance);
 
-    const setupResult = setup(readonly(instance.props), { emit: instance.emit });
+    const setupResult = setup(readonly(instance.props), {
+      emit: instance.emit,
+    });
 
     handleSetupResult(instance, setupResult);
   }
