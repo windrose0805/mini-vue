@@ -4,6 +4,7 @@ import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupCompoent } from "./component";
 import { shouldUpdateComponent } from "./componentUtils";
 import { createAppAPI } from "./createApp";
+import { queueJobs } from "./scheduler";
 import { Fragment, Text } from "./vnode";
 
 export function createRnderer(options) {
@@ -42,7 +43,7 @@ export function createRnderer(options) {
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, parentComponent, anchor);
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(n1, n2, container, parentComponent, anchor);
+          processComponent(n1, n2, container, anchor);
         }
     }
   }
@@ -62,25 +63,19 @@ export function createRnderer(options) {
     container.append(el);
   }
 
-  function processComponent(n1, n2, container, parentComponent, anchor) {
+  function processComponent(n1, n2, container, anchor) {
     if (!n1) {
-      mountComponent(n2, container, parentComponent, anchor);
+      mountComponent(n2, container, anchor);
     } else {
       updateComponent(n1, n2);
     }
   }
 
-  function mountComponent(initialVNode, container, parentComponent, anchor) {
+  function mountComponent(initialVNode, container, anchor) {
     const instance = (initialVNode.component =
       createComponentInstance(initialVNode));
     setupCompoent(instance);
-    setupRenderEffect(
-      instance,
-      initialVNode,
-      container,
-      parentComponent,
-      anchor
-    );
+    setupRenderEffect(instance, initialVNode, container, anchor);
   }
 
   function updateComponent(n1, n2) {
@@ -90,7 +85,7 @@ export function createRnderer(options) {
       instance.update();
     } else {
       n2.el = n1.el;
-      instance.vnode = n2
+      instance.vnode = n2;
     }
   }
 
@@ -342,38 +337,40 @@ export function createRnderer(options) {
     }
   }
 
-  function setupRenderEffect(
-    instance: any,
-    vnode,
-    container,
-    parentComponent,
-    anchor
-  ) {
+  function setupRenderEffect(instance: any, vnode, container, anchor) {
     const { proxy } = instance;
-    instance.update = effect(() => {
-      if (!instance.isMounted) {
-        const subTree = (instance.subTree = instance.render.call(proxy));
-        // vnode -> patch
-        // vnode -> element -> mountElement
-        patch(null, subTree, container, parentComponent, anchor);
-        vnode.el = subTree.el;
-
-        instance.isMounted = true;
-      } else {
-        // 更新
-        const { next, vnode } = instance;
-        if (next) {
-          next.el = vnode.el;
-          updateComponentPreRender(instance, next);
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          const subTree = (instance.subTree = instance.render.call(proxy));
+          // vnode -> element -> mountElement
+          patch(null, subTree, container, instance, anchor);
+          vnode.el = subTree.el;
+          
+          instance.isMounted = true;
+        } else {
+          // 更新
+          const { next, vnode } = instance;
+          if (next) {
+            next.el = vnode.el;
+            updateComponentPreRender(instance, next);
+          }
+          
+          const subTree = instance.render.call(proxy);
+          const prevTree = instance.subTree;
+          vnode.el = subTree.el;
+          instance.subTree = subTree;
+          // vnode -> patch
+          patch(prevTree, subTree, container, instance, anchor);
         }
-
-        const subTree = instance.render.call(proxy);
-        const prevTree = instance.subTree;
-        vnode.el = subTree.el;
-        instance.subTree = subTree;
-        patch(prevTree, subTree, container, parentComponent, anchor);
+      },
+      {
+        scheduler() {
+          console.log("update-scheduler");
+          queueJobs(instance.update);
+        },
       }
-    });
+    );
   }
 
   return {
